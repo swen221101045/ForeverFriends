@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>May we Friends?</title>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(60deg, rgba(214, 81, 231, 0.728), rgb(255, 141, 184));
+            font-family: Arial, Helvetica, sans-serif;
+            overflow: hidden;
+        }
+
+        #container {
+            position: relative;
+            width: 90vw;
+            max-width: 500px;
+            height: 70vh;
+            max-height: 600px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .box { text-align: center; padding: 20px; width: 100%; }
+
+        h1 {
+            font-size: clamp(1.5rem, 5vw, 2.2rem);
+            margin-bottom: 30px;
+            color: #000;
+            text-shadow: 1px 1px 3px rgba(0,0,0,0.2);
+        }
+
+        button {
+            border: none;
+            width: 100px;
+            border-radius: 10px;
+            font-size: 1.2rem;
+            padding: 10px;
+            cursor: pointer;
+            margin: 10px;
+            color: #fff;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        #yes { background-color: rgb(255, 0, 0); }
+
+        #target { 
+            position: absolute; 
+            background-color: rgba(0, 89, 255); 
+            transition: left 0.5s ease-out, top 0.5s ease-out;
+        }
+
+        /* --- POPUP STYLES --- */
+        #customModal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0; top: 0; width: 100%; height: 100%;
+            background-color: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(5px);
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background-color: white;
+            padding: 30px;
+            border-radius: 20px;
+            width: 85%;
+            max-width: 400px;
+            text-align: center;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+            animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        @keyframes popIn {
+            from { transform: scale(0.5); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+
+        .modal-content p {
+            font-size: 1.1rem;
+            line-height: 1.6;
+            color: #333;
+            margin-bottom: 20px;
+            white-space: pre-wrap;
+        }
+
+        #heartBtn {
+            font-size: 3.5rem;
+            background: none;
+            border: none;
+            cursor: pointer;
+            width: auto;
+            display: inline-block;
+            margin: 0;
+            padding: 0;
+            filter: drop-shadow(0 0 10px rgba(255, 0, 77, 0.4));
+        }
+
+        .pulse-heart {
+            animation: heartbeat-pulse 0.8s infinite;
+        }
+
+        @keyframes heartbeat-pulse {
+            0% { transform: scale(1); }
+            14% { transform: scale(1.3); }
+            28% { transform: scale(1); }
+            42% { transform: scale(1.3); }
+            70% { transform: scale(1); }
+        }
+
+        .emoji-bg { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; pointer-events: none; }
+        .emoji { position: absolute; bottom: -60px; font-size: 2rem; animation: rise 10s linear infinite; }
+        @keyframes rise {
+            0%   { transform: translateY(0) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(-110vh) rotate(360deg); opacity: 0; }
+        }
+    </style>
+</head>
+<body>
+    <audio id="bgMusic" loop preload="auto" playsinline>
+        <source src="By my side.MP3" type="audio/mpeg">
+    </audio>
+
+    <div class="emoji-bg" id="emojiBg"></div>
+
+    <div id="container">
+        <div class="box">
+            <h1>Can we be friends forever? 💕</h1>
+            <button id="yes">Yes</button>
+            <button id="target">No</button>
+        </div>
+    </div>
+
+    <div id="customModal">
+        <div class="modal-content">
+            <p id="modalText"></p>
+            <button id="heartBtn" onclick="handleModalClick()">❤️</button>
+            <p id="hintText" style="font-size: 0.8rem; color: #888; margin-top: 10px;"></p>
+        </div>
+    </div>
+
+    <script>
+        const target = document.getElementById('target');
+        const yes = document.getElementById('yes');
+        const modal = document.getElementById('customModal');
+        const modalText = document.getElementById('modalText');
+        const heartBtn = document.getElementById('heartBtn');
+        const hintText = document.getElementById('hintText');
+        const bgMusic = document.getElementById('bgMusic');
+
+        let modalStep = 1;
+        let loopInterval;
+
+        function playAudio() {
+            bgMusic.play().catch(error => {
+                console.log("Autoplay blocked. Waiting for touch.");
+                document.body.addEventListener('touchstart', () => {
+                    bgMusic.play();
+                }, { once: true });
+            });
+        }
+
+        yes.addEventListener('click', () => {
+            modalStep = 1;
+            modalText.innerText = "Great… I was hoping you’d say yes. Your presence makes everything better.🥰😘🤗\n\n💝🤍Nice choice… Because I wasn’t planning on letting you go anyway! 😏🫶🏻\n\n😁💯know we are friends forever! 🥳\n\n👉🏻See you soon!";
+            modal.style.display = 'flex';
+            heartBtn.classList.add('pulse-heart');
+            hintText.innerText = "(A special message for you, open the heart ✨)";
+            
+            playAudio();
+
+            confetti({ 
+                particleCount: 150, spread: 70, origin: { y: 0.6 }, zIndex: 2000,
+                colors: ['#ff0000', '#ff8db8', '#ffffff', '#ffd700']
+            });
+        });
+
+        function startContinuousLoop() {
+            loopInterval = setInterval(() => {
+                confetti({ particleCount: 3, angle: 60, spread: 55, origin: { x: 0, y: 0.6 }, zIndex: 2000, colors: ['#ff4d6d', '#ff0000'] });
+                confetti({ particleCount: 3, angle: 120, spread: 55, origin: { x: 1, y: 0.6 }, zIndex: 2000, colors: ['#ff4d6d', '#ffffff'] });
+            }, 200); 
+        }
+
+        function handleModalClick() {
+            if (modalStep === 1) {
+                modalStep = 2;
+                modalText.innerText = "if you are busy, I will wait\nif your heart feel heavy, i will listen\nif you need a hand, i will help\nno matter what life brings,\nremember this, i'm always here for you";
+                hintText.innerText = "(Until the last heartbeat ❤️)";
+                confetti({ particleCount: 100, spread: 80, origin: { y: 0.7 }, zIndex: 2000, colors: ['#ff4d6d', '#ff0000'] });
+                startContinuousLoop();
+            } else {
+                // Completely removed Step 3. Close modal and stop music.
+                modal.style.display = 'none';
+                heartBtn.classList.remove('pulse-heart');
+                clearInterval(loopInterval);
+                
+                bgMusic.pause();
+                bgMusic.currentTime = 0;
+                
+                // Reset step for next time "Yes" is clicked
+                modalStep = 1;
+            }
+        }
+
+        function moveTarget() {
+            const containerRect = document.getElementById('container').getBoundingClientRect();
+            const randomX = Math.floor(Math.random() * (containerRect.width - 100));
+            const randomY = Math.floor(Math.random() * (containerRect.height - 50));
+            target.style.left = randomX + 'px';
+            target.style.top = randomY + 'px';
+        }
+
+        target.addEventListener('mouseenter', moveTarget);
+        target.addEventListener('touchstart', (e) => { e.preventDefault(); moveTarget(); });
+
+        const emojis = ['💕', '😊', '🌸', '😍', '💝', '🥰', '🌷', '💖', '😘', '🌹', '💗', '🤗'];
+        function createEmoji() {
+            const span = document.createElement('span');
+            span.className = 'emoji';
+            span.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+            span.style.left = Math.random() * 100 + '%';
+            span.style.animationDuration = (Math.random() * 4 + 8) + 's';
+            document.getElementById('emojiBg').appendChild(span);
+            setTimeout(() => span.remove(), 12000);
+        }
+        setInterval(createEmoji, 400);
+    </script>
+</body>
+</html>
